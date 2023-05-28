@@ -1,5 +1,5 @@
 class Piece {
-
+class Piece {
     constructor(row, column, color) {
         this.row = row
         this.column = column
@@ -433,7 +433,6 @@ class King extends Piece {
     }
 
     isChecked(board) {
-
         const enemyPieces = board.filter(piece => piece.color !== this.color && piece.name !== 'King')
 
         for (let i = 0; i < enemyPieces.length; i++) {
