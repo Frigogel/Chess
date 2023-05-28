@@ -1,5 +1,7 @@
 import { Pawn, King, Queen, Rook, Bishop, Knight } from './classes.js'
 
+console.log('Working')
+
 const chessContainer = document.querySelector('.chess')
 chessContainer.style.setProperty('position', 'relative')
 chessContainer.style.setProperty('display', 'inline-block')
