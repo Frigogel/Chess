@@ -1,20 +1,17 @@
 import { Pawn, King, Queen, Rook, Bishop, Knight } from './classes.js'
 
-console.log('Working')
-
 const chessContainer = document.querySelector('.chess')
 chessContainer.style.setProperty('position', 'relative')
 chessContainer.style.setProperty('display', 'inline-block')
 
 let createBoard = () => {
     let size = chessContainer.getAttribute('size')
-    if (size === 'auto') {
+    if (size.includes('fill')) {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
-        if (screenHeight < screenWidth) size = screenHeight.toString() + 'px'
-        else size = screenWidth.toString() + 'px'
+        if (screenHeight < screenWidth) size = size.replace('fill', screenHeight.toString() + 'px') 
+        else size = size.replace('fill', screenWidth.toString() + 'px')
     }
-    console.log(size)
     let textContent = '<table style="border-collapse: collapse; border: 2px solid black; background: rgb(238,238,210);">'
     for (let i = 0; i < 8; i++) {
         textContent += `<tr>`
@@ -47,6 +44,7 @@ let updatePosition = (piece) => {
     if (kill) {
         chessBoard.splice(chessBoard.indexOf(kill), 1)
         th.firstChild.remove()
+        lastKill = 0
     }
 
     th.appendChild(piece.element)
@@ -112,6 +110,7 @@ function newTurn() {
                 moveListener.addEventListener('click', () => {
 
                     lastMovedPieces.push([piece, piece.row, piece.column])
+                    lastKill++
 
                     piece.row = moves[move][0];
                     piece.column = moves[move][1];
@@ -137,6 +136,7 @@ function newTurn() {
                             const kill = moves[move][2]
                             chessBoard.splice(chessBoard.indexOf(kill), 1)
                             kill.element.remove()
+                            lastKill = 0
                         }
                     }
 
@@ -195,22 +195,22 @@ function newTurn() {
                         if (chessBoard.filter(p => p.name === 'King' && p.color !== piece.color)[0].isChecked(chessBoard))
                             playerWins(turn)
                         // Stalemate
-                        else playerWins(undefined, true)
+                        else playerWins(undefined, 'Stalemate')
                     }
 
                     // Insufficient material
                     const whitePieces = chessBoard.filter(p => p.color === 'white').sort((a,b) => a.value - b.value)
                     const blackPieces = chessBoard.filter(p => p.color === 'black').sort((a,b) => a.value - b.value)
                     // King vs King
-                    if (whitePieces.length === 1 && blackPieces.length === 1) playerWins(undefined, true)
+                    if (whitePieces.length === 1 && blackPieces.length === 1) playerWins(undefined, 'Insufficient material')
                     // King vs King + Minor Piece
-                    if (whitePieces.length === 2 && blackPieces.length === 1 && whitePieces[1].value === 3) playerWins(undefined, true)
-                    if (blackPieces.length === 2 && whitePieces.length === 1 && blackPieces[1].value === 3) playerWins(undefined, true)
+                    if (whitePieces.length === 2 && blackPieces.length === 1 && whitePieces[1].value === 3) playerWins(undefined, 'Insufficient material')
+                    if (blackPieces.length === 2 && whitePieces.length === 1 && blackPieces[1].value === 3) playerWins(undefined, 'Insufficient material')
                     // King vs King + 2 Knights
-                    if (whitePieces.length === 3 && blackPieces.length === 1 && whitePieces[1].name === 'Knight' && whitePieces[2].name === 'Knight') playerWins(undefined, true)
-                    if (blackPieces.length === 3 && whitePieces.length === 1 && blackPieces[1].name === 'Knight' && blackPieces[2].name === 'Knight') playerWins(undefined, true)
+                    if (whitePieces.length === 3 && blackPieces.length === 1 && whitePieces[1].name === 'Knight' && whitePieces[2].name === 'Knight') playerWins(undefined, 'Insufficient material')
+                    if (blackPieces.length === 3 && whitePieces.length === 1 && blackPieces[1].name === 'Knight' && blackPieces[2].name === 'Knight') playerWins(undefined, 'Insufficient material')
                     // King + Minor Piece vs King + Minor Piece
-                    if (whitePieces.length === 2 && blackPieces.length === 2 && whitePieces[1].value === 3 && blackPieces[1].value) playerWins(undefined, true)
+                    if (whitePieces.length === 2 && blackPieces.length === 2 && whitePieces[1].value === 3 && blackPieces[1].value) playerWins(undefined, 'Insufficient material')
 
                     // Repetition
                     const lastNineMoves = lastMovedPieces.slice(-9).map(move => [move[0],move.slice(-2).toString()])
@@ -224,7 +224,16 @@ function newTurn() {
                             lastNineMoves[1][1] === lastNineMoves[5][1] &&
                             lastNineMoves[2][1] === lastNineMoves[6][1] &&
                             lastNineMoves[3][1] === lastNineMoves[7][1]
-                        ) playerWins(undefined, true)
+                        ) playerWins(undefined, 'Repetition')
+                    
+                    // 50 move rule
+                    let pawnedMoved = false
+                    if (lastMovedPieces[lastMovedPieces.length - 1][0].name === 'Pawn') {
+                        pawnedMoved = true
+                        lastKill = 0
+                    }
+
+                    if (lastKill === 50 && !pawnedMoved) playerWins(undefined, '50 move rule')
 
                     newTurn()
 
@@ -243,7 +252,9 @@ function playerWins(winner, draw = false) {
     winScreen.style.setProperty('position', 'absolute')
     winScreen.style.setProperty('top', '50%')
     winScreen.style.setProperty('left', '50%')
-    winScreen.style.setProperty('background', 'blue')
+    winScreen.style.setProperty('background', 'rgb(85,85,85)')
+    winScreen.style.setProperty('color', 'white')
+    winScreen.style.setProperty('border-radius', '10%')
     winScreen.style.setProperty('width', '50%')
     winScreen.style.setProperty('height', '40%')
     winScreen.style.setProperty('transform', 'translate(-50%,-50%)')
@@ -252,16 +263,23 @@ function playerWins(winner, draw = false) {
     winScreen.style.setProperty('justify-content', 'center')
     winScreen.style.setProperty('overflow', 'hidden')
     winScreen.style.setProperty('flex-direction', 'column')
-    if (draw) {
-        winScreen.innerText = 'Draw!'
-    }
-    else winScreen.innerText = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`
-    winScreen.style.setProperty('font-size', '20px')
     winScreen.style.setProperty('white-space', 'nowrap')
+
+    const winScreenText = document.createElement('h2')
+    winScreen.appendChild(winScreenText)
+
+    if (draw) {
+        winScreenText.innerText =  `It's a draw by : ${draw}`
+    }
+    else winScreenText.innerText = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`
 
     const resetButton = document.createElement('button')
     resetButton.style.setProperty('padding', '1rem')
     resetButton.style.setProperty('margin-top', '.5rem')
+    resetButton.style.setProperty('border-radius', '10%')
+    resetButton.style.setProperty('background', 'rgb(85,85,85)')
+    resetButton.style.setProperty('border', '5px solid white')
+    resetButton.style.setProperty('color', 'white')
     resetButton.innerText = 'Reset'
     resetButton.addEventListener('click', () => {
         winScreen.remove()
@@ -297,5 +315,6 @@ for (let i = 0; i < chessBoard.length; i++) {
 
 let turn = 'black'
 let lastMovedPieces = []
+let lastKill = 0
 
 newTurn()
