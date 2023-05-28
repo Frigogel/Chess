@@ -460,11 +460,19 @@ chessContainer.style.setProperty('position', 'relative')
 chessContainer.style.setProperty('display', 'inline-block')
 
 let createBoard = () => {
+    let size = chessContainer.getAttribute('size')
+    if (size === 'auto') {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        if (screenHeight < screenWidth) size = screenHeight.toString() + 'px'
+        else size = screenWidth.toString() + 'px'
+    }
+    console.log(size)
     let textContent = '<table style="border-collapse: collapse; border: 2px solid black; background: rgb(238,238,210);">'
     for (let i = 0; i < 8; i++) {
         textContent += `<tr>`
         for (let j = 0; j < 8; j++) {
-            textContent += `<th style="padding: 0;height: calc(${chessContainer.getAttribute('size')}/8); width: calc(${chessContainer.getAttribute('size')}/8); ${(i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0) ? 'background: rgb(118,150,86)' : ''}; position: relative"></th>`
+            textContent += `<th style="padding: 0;height: calc(${size}/8); width: calc(${size}/8); ${(i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0) ? 'background: rgb(118,150,86)' : ''}; position: relative"></th>`
         }
         textContent += '</tr>'
     }
