@@ -1,5 +1,4 @@
 class Piece {
-class Piece {
     constructor(row, column, color) {
         this.row = row
         this.column = column
