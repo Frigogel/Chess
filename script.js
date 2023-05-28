@@ -266,10 +266,11 @@ function playerWins(winner, draw = false) {
     winScreen.style.setProperty('white-space', 'nowrap')
 
     const winScreenText = document.createElement('h2')
+    winScreenText.style.setProperty('font-size', '16px')
     winScreen.appendChild(winScreenText)
 
     if (draw) {
-        winScreenText.innerText =  `It's a draw by : ${draw}`
+        winScreenText.innerText =  `Draw by : ${draw}`
     }
     else winScreenText.innerText = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`
 
