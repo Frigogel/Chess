@@ -291,6 +291,11 @@ function newTurn() {
                             blackTimer.style.setProperty('transform', `rotateX(-${newAngle}deg)`)
                         }
 
+                    } else {
+                        if (timerCheckboxInput.checked) {
+                            whiteTimer.style.setProperty('transform', `rotate(-${newAngle}deg)`)
+                            blackTimer.style.setProperty('transform', `rotate(-${newAngle}deg)`)
+                        }
                     }
 
                     newTurn()
@@ -426,7 +431,7 @@ settingsImage.style.setProperty('transform', 'translateZ(0)')
 
 const settings = document.createElement('div')
 settings.classList.add('settings')
-settings.style.setProperty('height', `calc(${size}/2)`)
+settings.style.setProperty('padding-bottom', `calc(${size}*0.05)`)
 settings.style.setProperty('width', `calc(${size}/4)`)
 settings.style.setProperty('position', 'absolute')
 settings.style.setProperty('top', `calc(${size}*0.05)`)
@@ -441,10 +446,14 @@ topSidebar.appendChild(settings)
 
 const rotateCheckboxContainer = document.createElement('div')
 rotateCheckboxContainer.style.setProperty('margin-top', '10%')
+rotateCheckboxContainer.style.setProperty('display', 'flex');
+rotateCheckboxContainer.style.setProperty('align-items', 'center');
 
 const rotateCheckboxInput = document.createElement('input');
 rotateCheckboxInput.type = 'checkbox'
 rotateCheckboxInput.id = 'rotate-checkbox'
+rotateCheckboxInput.style.setProperty('height', `calc(${size}*0.025)`)
+rotateCheckboxInput.style.setProperty('aspect-ratio', '1')
 
 const rotateLabel = document.createElement("label");
 rotateLabel.setAttribute("for", "rotate-checkbox");
@@ -455,11 +464,14 @@ rotateCheckboxContainer.appendChild(rotateLabel)
 
 const timerCheckboxContainer = document.createElement('div');
 timerCheckboxContainer.style.setProperty('margin-top', '10%');
+timerCheckboxContainer.style.setProperty('display', 'flex');
+timerCheckboxContainer.style.setProperty('align-items', 'center');
 
 const timerCheckboxInput = document.createElement('input');
-timerCheckboxInput.style.setProperty('height', '80%');
 timerCheckboxInput.type = 'checkbox';
 timerCheckboxInput.id = 'timer-checkbox';
+timerCheckboxInput.style.setProperty('height', `calc(${size}*0.025)`)
+timerCheckboxInput.style.setProperty('aspect-ratio', '1')
 
 let timerIntervalWhite;
 let timerIntervalBlack;
@@ -489,7 +501,7 @@ function stopTimerWhite() {
 function updateTimerWhite() {
     if (secondsWhite <= 0) {
         clearInterval(timerIntervalWhite);
-        console.log('No more time for white');
+        playerWins('black')
         return;
     }
 
@@ -510,7 +522,7 @@ function stopTimerBlack() {
 function updateTimerBlack() {
     if (secondsBlack <= 0) {
         clearInterval(timerIntervalBlack);
-        console.log('No more time for black');
+        playerWins('white')
         return;
     }
 
@@ -530,7 +542,8 @@ function pad(value) {
 }
 
 const durationSlider = document.createElement('input');
-durationSlider.style.setProperty('width', '90%');
+durationSlider.style.setProperty('width', '80%');
+durationSlider.style.setProperty('height', `calc(${size}*0.01)`);
 durationSlider.style.setProperty('margin-left', `calc(${size}*0.025)`);
 durationSlider.type = 'range';
 durationSlider.id = 'durationSlider';
@@ -569,6 +582,11 @@ timerCheckboxInput.addEventListener('change', function () {
     whiteTimer.style.setProperty('height', `calc(${size}*0.05)`);
     whiteTimer.style.setProperty('width', `calc(${size}*0.1)`);
     whiteTimer.style.setProperty('background', 'white');
+    whiteTimer.style.setProperty('font-size', `calc(${size}*0.04)`);
+    whiteTimer.style.setProperty('display', 'flex')
+    whiteTimer.style.setProperty('justify-content', 'center')
+    whiteTimer.style.setProperty('align-items', 'center')
+    whiteTimer.style.setProperty('display', 'flex')
 
 
     blackTimer = document.createElement('div');
@@ -580,6 +598,10 @@ timerCheckboxInput.addEventListener('change', function () {
     blackTimer.style.setProperty('width', `calc(${size}*0.1)`);
     blackTimer.style.setProperty('background', 'black');
     blackTimer.style.setProperty('color', 'white');
+    blackTimer.style.setProperty('font-size', `calc(${size}*0.04)`);
+    blackTimer.style.setProperty('display', 'flex')
+    blackTimer.style.setProperty('justify-content', 'center')
+    blackTimer.style.setProperty('align-items', 'center')
 
 
     timerContainer.appendChild(durationSlider);
