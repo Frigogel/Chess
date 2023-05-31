@@ -3,25 +3,18 @@ import { Pawn, King, Queen, Rook, Bishop, Knight } from './classes.js'
 const chessContainer = document.querySelector('.chess')
 chessContainer.style.setProperty('position', 'relative')
 chessContainer.style.setProperty('display', 'inline-block')
+chessContainer.style.setProperty('perspective', '100px')
+chessContainer.style.setProperty('transform-style', 'preserve-3d')
 
-let createBoard = () => {
-    let size = chessContainer.getAttribute('size')
-    if (size.includes('fill')) {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        if (screenHeight < screenWidth) size = size.replace('fill', screenHeight.toString() + 'px') 
-        else size = size.replace('fill', screenWidth.toString() + 'px')
+function extractRotationAngle(matrix) {
+    const match = matrix.match(/matrix\((.+)\)/);
+    if (match) {
+        const values = match[1].split(",");
+        const a = parseFloat(values[0]);
+        const b = parseFloat(values[1]);
+        return Math.round(Math.atan2(b, a) * (180 / Math.PI));
     }
-    let textContent = '<table style="border-collapse: collapse; border: 2px solid black; background: rgb(238,238,210);">'
-    for (let i = 0; i < 8; i++) {
-        textContent += `<tr>`
-        for (let j = 0; j < 8; j++) {
-            textContent += `<th style="padding: 0;height: calc(${size}/8); width: calc(${size}/8); ${(i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0) ? 'background: rgb(118,150,86)' : ''}; position: relative"></th>`
-        }
-        textContent += '</tr>'
-    }
-    textContent += '</table>'
-    return textContent
+    return 0;
 }
 
 let createChessBoard = () => {
@@ -33,6 +26,38 @@ let createChessBoard = () => {
     ]
 }
 
+let killPiece = (piece) => {
+    const currentScore = document.querySelector('.score')
+    if (currentScore) currentScore.remove()
+    chessBoard.splice(chessBoard.indexOf(piece), 1)
+    piece.element.style.setProperty('aspect-ratio', '1')
+    piece.element.style.setProperty('transform', 'rotate(0deg)')
+    if (piece.color === 'white') {
+        whiteGraveyard.appendChild(piece.element)
+        blackScore += piece.value
+    }
+    else {
+        blackGraveyard.appendChild(piece.element)
+        whiteScore += piece.value
+    }
+    const score = document.createElement('h2')
+    score.style.setProperty('color', 'rgb(200,200,200)')
+    score.style.setProperty('margin', '0')
+    score.style.setProperty('font-size', `calc(${size}*0.03)`)
+    score.style.setProperty('text-align', 'center')
+    score.classList.add('score')
+    if (whiteScore > blackScore) {
+        score.innerText = '+' + (whiteScore - blackScore)
+        blackGraveyard.appendChild(score)
+    }
+    else if (blackScore > whiteScore) {
+        score.innerText = '+' + (blackScore - whiteScore)
+        whiteGraveyard.appendChild(score)
+    }
+    console.log(whiteScore, blackScore)
+    lastKill = 0
+}
+
 let updatePosition = (piece) => {
 
     piece.hasMoved = true
@@ -42,9 +67,7 @@ let updatePosition = (piece) => {
     const kill = chessBoard.filter(p => p.row === piece.row && p.column === piece.column && p !== piece)[0]
 
     if (kill) {
-        chessBoard.splice(chessBoard.indexOf(kill), 1)
-        th.firstChild.remove()
-        lastKill = 0
+        killPiece(kill)
     }
 
     th.appendChild(piece.element)
@@ -76,9 +99,9 @@ function newTurn() {
             const piece = movablePieces[i]
 
             const possibleMoveElements = document.querySelectorAll('.chess .possible-move')
-            for (let child = 0; child < possibleMoveElements.length; child++) {
-                possibleMoveElements[child].remove()
-            }
+            possibleMoveElements.forEach(e => e.remove())
+            const moveEventListeners = document.querySelectorAll('.chess .moveEventListener')
+            moveEventListeners.forEach(e => e.remove())
 
             // Add curent moves
             const moves = piece.getMoves(chessBoard, lastMovedPieces[lastMovedPieces.length - 1])
@@ -109,6 +132,21 @@ function newTurn() {
 
                 moveListener.addEventListener('click', () => {
 
+                    settings.remove()
+                    settingsImage.remove()
+
+                    // Timer
+                    if (timerCheckboxInput.checked) {
+                        if (piece.color === 'white') {
+                            stopTimerWhite()
+                            startTimerBlack()
+                        }
+                        else {
+                            stopTimerBlack()
+                            startTimerWhite()
+                        }
+                    }
+
                     lastMovedPieces.push([piece, piece.row, piece.column])
                     lastKill++
 
@@ -134,17 +172,15 @@ function newTurn() {
                         }
                         else {
                             const kill = moves[move][2]
-                            chessBoard.splice(chessBoard.indexOf(kill), 1)
-                            kill.element.remove()
-                            lastKill = 0
+                            killPiece(kill)
                         }
                     }
 
                     // Pawn Promotion
                     if (piece.name === 'Pawn')
-                    
+
                         if ((piece.color === 'white' && piece.row === 0) || (piece.color === 'black' && piece.row === 7)) {
-                            
+
                             const promotionContainer = document.createElement('div');
                             chessContainer.appendChild(promotionContainer);
 
@@ -199,8 +235,8 @@ function newTurn() {
                     }
 
                     // Insufficient material
-                    const whitePieces = chessBoard.filter(p => p.color === 'white').sort((a,b) => a.value - b.value)
-                    const blackPieces = chessBoard.filter(p => p.color === 'black').sort((a,b) => a.value - b.value)
+                    const whitePieces = chessBoard.filter(p => p.color === 'white').sort((a, b) => a.value - b.value)
+                    const blackPieces = chessBoard.filter(p => p.color === 'black').sort((a, b) => a.value - b.value)
                     // King vs King
                     if (whitePieces.length === 1 && blackPieces.length === 1) playerWins(undefined, 'Insufficient material')
                     // King vs King + Minor Piece
@@ -213,7 +249,7 @@ function newTurn() {
                     if (whitePieces.length === 2 && blackPieces.length === 2 && whitePieces[1].value === 3 && blackPieces[1].value) playerWins(undefined, 'Insufficient material')
 
                     // Repetition
-                    const lastNineMoves = lastMovedPieces.slice(-9).map(move => [move[0],move.slice(-2).toString()])
+                    const lastNineMoves = lastMovedPieces.slice(-9).map(move => [move[0], move.slice(-2).toString()])
                     if (lastNineMoves.length === 9)
                         if (
                             lastNineMoves[0][0] === lastNineMoves[4][0] && lastNineMoves[4][0] === lastNineMoves[8][0] &&
@@ -225,7 +261,7 @@ function newTurn() {
                             lastNineMoves[2][1] === lastNineMoves[6][1] &&
                             lastNineMoves[3][1] === lastNineMoves[7][1]
                         ) playerWins(undefined, 'Repetition')
-                    
+
                     // 50 move rule
                     let pawnedMoved = false
                     if (lastMovedPieces[lastMovedPieces.length - 1][0].name === 'Pawn') {
@@ -234,6 +270,28 @@ function newTurn() {
                     }
 
                     if (lastKill === 50 && !pawnedMoved) playerWins(undefined, '50 move rule')
+
+                    // Rotate Pieces
+                    const computedStyle = getComputedStyle(piece.element)
+                    const currentRotation = computedStyle.transform
+                    const currentAngle = extractRotationAngle(currentRotation);
+
+                    const newAngle = currentAngle + 180
+
+                    const availablePieces = document.querySelectorAll('.chess table .piece');
+                    availablePieces.forEach(e => e.style.setProperty('transform', `rotate(${newAngle}deg)`))
+
+
+                    if (rotateCheckboxInput.checked) {
+                        chessContainer.style.setProperty('transform', `rotateX(${newAngle}deg)`)
+                        whiteGraveyard.style.setProperty('transform', `rotateX(${newAngle}deg)`)
+                        blackGraveyard.style.setProperty('transform', `rotateX(${newAngle}deg)`)
+                        if (timerCheckboxInput.checked) {
+                            whiteTimer.style.setProperty('transform', `rotateX(-${newAngle}deg)`)
+                            blackTimer.style.setProperty('transform', `rotateX(-${newAngle}deg)`)
+                        }
+
+                    }
 
                     newTurn()
 
@@ -265,22 +323,24 @@ function playerWins(winner, draw = false) {
     winScreen.style.setProperty('flex-direction', 'column')
     winScreen.style.setProperty('white-space', 'nowrap')
 
-    const winScreenText = document.createElement('h2')
-    winScreenText.style.setProperty('font-size', '16px')
+    const winScreenText = document.createElement('div')
+    winScreenText.style.setProperty('font-size', `calc(${size}/20)`)
+    // console.log(`${size}px`)
     winScreen.appendChild(winScreenText)
 
     if (draw) {
-        winScreenText.innerText =  `Draw by : ${draw}`
+        winScreenText.innerText = `Draw by : ${draw}`
     }
     else winScreenText.innerText = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`
 
     const resetButton = document.createElement('button')
-    resetButton.style.setProperty('padding', '1rem')
+    resetButton.style.setProperty('padding', '.5rem')
     resetButton.style.setProperty('margin-top', '.5rem')
     resetButton.style.setProperty('border-radius', '10%')
     resetButton.style.setProperty('background', 'rgb(85,85,85)')
     resetButton.style.setProperty('border', '5px solid white')
     resetButton.style.setProperty('color', 'white')
+    resetButton.style.setProperty('font-size', `calc(${size}/25)`)
     resetButton.innerText = 'Reset'
     resetButton.addEventListener('click', () => {
         winScreen.remove()
@@ -297,13 +357,283 @@ function playerWins(winner, draw = false) {
         }
 
         turn = 'black'
+
+        const availablePieces = document.querySelectorAll('.chess table .piece');
+        availablePieces.forEach(e => e.style.setProperty('transform', `rotate(0deg)`))
+
+
+        chessContainer.style.setProperty('transform', `rotate(0deg)`)
+        whiteGraveyard.style.setProperty('transform', `rotate(0deg)`)
+        blackGraveyard.style.setProperty('transform', `rotate(0deg)`)
+
         newTurn()
     })
 
     winScreen.appendChild(resetButton)
 }
 
-chessContainer.innerHTML = createBoard()
+
+let size = chessContainer.getAttribute('size')
+if (size.includes('fill')) {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    if (screenHeight < screenWidth) size = size.replace('fill', screenHeight.toString() + 'px')
+    else size = size.replace('fill', screenWidth.toString() + 'px')
+}
+const newBoard = () => {
+    const table = document.createElement('table')
+    table.style.setProperty('border-collapse', 'collapse')
+    table.style.setProperty('border', '2px solid black')
+    table.style.setProperty('background', 'rgb(238,238,210)')
+    for (let i = 0; i < 8; i++) {
+        const tr = document.createElement('tr')
+        for (let j = 0; j < 8; j++) {
+            const th = document.createElement('th')
+            th.style.setProperty('padding', '0')
+            th.style.setProperty('height', `calc(calc(${size}/8)*0.9)`)
+            th.style.setProperty('width', `calc(calc(${size}/8)*0.9)`)
+            th.style.setProperty('position', 'relative')
+            if ((i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0)) th.style.setProperty('background', 'rgb(118,150,86)')
+            tr.appendChild(th)
+        }
+        table.appendChild(tr)
+        chessContainer.appendChild(table)
+    }
+}
+
+
+const topSidebar = document.createElement('div')
+topSidebar.style.setProperty('height', `calc(${size}*0.05)`)
+topSidebar.style.setProperty('background', 'rgb(40,40,40)')
+topSidebar.style.setProperty('display', 'flex')
+const bottomSidebar = document.createElement('div')
+bottomSidebar.style.setProperty('height', `calc(${size}*0.05)`)
+bottomSidebar.style.setProperty('background', 'rgb(40,40,40)')
+bottomSidebar.style.setProperty('display', 'flex')
+
+chessContainer.appendChild(topSidebar)
+newBoard()
+chessContainer.append(bottomSidebar)
+
+
+const settingsImage = document.createElement('div')
+settingsImage.style.setProperty('background-image', 'url(./images/settings.png)')
+settingsImage.style.setProperty('height', `calc(${size}*0.05)`)
+settingsImage.style.setProperty('width', `calc(${size}*0.05)`)
+settingsImage.style.setProperty('position', 'absolute')
+settingsImage.style.setProperty('background-size', 'cover')
+settingsImage.style.setProperty('transform', 'translateZ(0)')
+
+const settings = document.createElement('div')
+settings.classList.add('settings')
+settings.style.setProperty('height', `calc(${size}/2)`)
+settings.style.setProperty('width', `calc(${size}/4)`)
+settings.style.setProperty('position', 'absolute')
+settings.style.setProperty('top', `calc(${size}*0.05)`)
+settings.style.setProperty('left', '0')
+settings.style.setProperty('z-index', '1')
+settings.style.setProperty('font-size', `calc(${size}/30)`)
+settings.style.setProperty('color', 'rgb(200,200,200)')
+settings.style.setProperty('display', 'none')
+
+topSidebar.appendChild(settingsImage)
+topSidebar.appendChild(settings)
+
+const rotateCheckboxContainer = document.createElement('div')
+rotateCheckboxContainer.style.setProperty('margin-top', '10%')
+
+const rotateCheckboxInput = document.createElement('input');
+rotateCheckboxInput.type = 'checkbox'
+rotateCheckboxInput.id = 'rotate-checkbox'
+
+const rotateLabel = document.createElement("label");
+rotateLabel.setAttribute("for", "rotate-checkbox");
+rotateLabel.textContent = "Board rotates";
+
+rotateCheckboxContainer.appendChild(rotateCheckboxInput)
+rotateCheckboxContainer.appendChild(rotateLabel)
+
+const timerCheckboxContainer = document.createElement('div');
+timerCheckboxContainer.style.setProperty('margin-top', '10%');
+
+const timerCheckboxInput = document.createElement('input');
+timerCheckboxInput.style.setProperty('height', '80%');
+timerCheckboxInput.type = 'checkbox';
+timerCheckboxInput.id = 'timer-checkbox';
+
+let timerIntervalWhite;
+let timerIntervalBlack;
+let whiteTimer;
+let blackTimer;
+let secondsWhite;
+let secondsBlack;
+
+function updateSelectedDuration() {
+    const minutes = durationSlider.value;
+    selectedDuration.textContent = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    secondsBlack = minutes * 60
+    secondsWhite = minutes * 60
+    whiteTimer.textContent = formatTime(secondsWhite)
+    blackTimer.textContent = formatTime(secondsBlack)
+}
+
+function startTimerWhite() {
+    clearInterval(timerIntervalWhite);
+    timerIntervalWhite = setInterval(updateTimerWhite, 1000);
+}
+
+function stopTimerWhite() {
+    clearInterval(timerIntervalWhite);
+}
+
+function updateTimerWhite() {
+    if (secondsWhite <= 0) {
+        clearInterval(timerIntervalWhite);
+        console.log('No more time for white');
+        return;
+    }
+
+    secondsWhite--;
+    const formattedTime = formatTime(secondsWhite);
+    whiteTimer.textContent = formattedTime;
+}
+
+function startTimerBlack() {
+    clearInterval(timerIntervalBlack);
+    timerIntervalBlack = setInterval(updateTimerBlack, 1000);
+}
+
+function stopTimerBlack() {
+    clearInterval(timerIntervalBlack);
+}
+
+function updateTimerBlack() {
+    if (secondsBlack <= 0) {
+        clearInterval(timerIntervalBlack);
+        console.log('No more time for black');
+        return;
+    }
+
+    secondsBlack--;
+    const formattedTime = formatTime(secondsBlack);
+    blackTimer.textContent = formattedTime;
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${pad(minutes)}:${pad(remainingSeconds)}`;
+}
+
+function pad(value) {
+    return String(value).padStart(2, '0');
+}
+
+const durationSlider = document.createElement('input');
+durationSlider.style.setProperty('width', '90%');
+durationSlider.style.setProperty('margin-left', `calc(${size}*0.025)`);
+durationSlider.type = 'range';
+durationSlider.id = 'durationSlider';
+durationSlider.min = '1';
+durationSlider.max = '10';
+durationSlider.step = '1';
+
+const selectedDuration = document.createElement('span');
+selectedDuration.style.setProperty('margin-left', `calc(${size}*0.025)`);
+selectedDuration.id = 'selectedDuration';
+
+const timerContainer = document.querySelector('.chess .settings');
+
+
+timerCheckboxInput.addEventListener('change', function () {
+    if (!this.checked) {
+        const durationSlider = document.querySelector('#durationSlider');
+        durationSlider.remove();
+
+        const selectedDuration = document.querySelector('#selectedDuration');
+        selectedDuration.remove();
+
+        stopTimerWhite();
+        stopTimerBlack();
+
+        whiteTimer.remove()
+        blackTimer.remove()
+        return;
+    }
+
+    whiteTimer = document.createElement('div');
+    whiteTimer.classList.add('white-timer');
+    whiteTimer.style.setProperty('position', 'absolute');
+    whiteTimer.style.setProperty('bottom', '0');
+    whiteTimer.style.setProperty('right', '0');
+    whiteTimer.style.setProperty('height', `calc(${size}*0.05)`);
+    whiteTimer.style.setProperty('width', `calc(${size}*0.1)`);
+    whiteTimer.style.setProperty('background', 'white');
+
+
+    blackTimer = document.createElement('div');
+    blackTimer.classList.add('black-timer');
+    blackTimer.style.setProperty('position', 'absolute');
+    blackTimer.style.setProperty('top', '0');
+    blackTimer.style.setProperty('right', '0');
+    blackTimer.style.setProperty('height', `calc(${size}*0.05)`);
+    blackTimer.style.setProperty('width', `calc(${size}*0.1)`);
+    blackTimer.style.setProperty('background', 'black');
+    blackTimer.style.setProperty('color', 'white');
+
+
+    timerContainer.appendChild(durationSlider);
+    timerContainer.appendChild(selectedDuration);
+
+    chessContainer.appendChild(blackTimer);
+    chessContainer.appendChild(whiteTimer);
+
+    durationSlider.addEventListener('input', updateSelectedDuration);
+
+    updateSelectedDuration();
+});
+
+const timerLabel = document.createElement('label');
+timerLabel.setAttribute('for', 'timer-checkbox');
+timerLabel.textContent = 'Timer';
+
+timerCheckboxContainer.appendChild(timerCheckboxInput);
+timerCheckboxContainer.appendChild(timerLabel);
+
+let settingsOpen = false
+
+settingsImage.addEventListener('click', () => {
+    if (!settingsOpen) {
+        settings.style.setProperty('background', 'rgb(40,40,40)')
+        settings.style.setProperty('display', 'block')
+        settings.appendChild(rotateCheckboxContainer)
+        settings.appendChild(timerCheckboxContainer)
+        settingsOpen = true
+        return
+    }
+    settings.style.setProperty('display', 'none')
+    rotateCheckboxContainer.remove()
+    timerCheckboxContainer.remove()
+    settingsOpen = false
+})
+
+const whiteGraveyard = document.createElement('div')
+whiteGraveyard.style.setProperty('width', '100%')
+whiteGraveyard.style.setProperty('margin-left', `calc(${size}*0.1)`)
+whiteGraveyard.style.setProperty('display', 'flex')
+whiteGraveyard.style.setProperty('align-items', 'center')
+topSidebar.appendChild(whiteGraveyard)
+
+const blackGraveyard = document.createElement('div')
+blackGraveyard.style.setProperty('width', '100%')
+blackGraveyard.style.setProperty('margin-left', `calc(${size}*0.1)`)
+blackGraveyard.style.setProperty('display', 'flex')
+blackGraveyard.style.setProperty('align-items', 'center')
+bottomSidebar.appendChild(blackGraveyard)
+
+let whiteScore = 0
+let blackScore = 0
+
 
 let chessBoard = createChessBoard()
 
@@ -317,5 +647,4 @@ for (let i = 0; i < chessBoard.length; i++) {
 let turn = 'black'
 let lastMovedPieces = []
 let lastKill = 0
-
 newTurn()
