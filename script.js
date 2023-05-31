@@ -554,15 +554,16 @@ const selectedDuration = document.createElement('span');
 selectedDuration.style.setProperty('margin-left', `calc(${size}*0.025)`);
 selectedDuration.id = 'selectedDuration';
 
-const timerContainer = document.querySelector('.chess .settings');
+// const timerContainer = document.querySelector('.chess .settings');
 
 
 timerCheckboxInput.addEventListener('change', function () {
     if (!this.checked) {
-        const durationSlider = document.querySelector('#durationSlider');
+        // const durationSlider = document.querySelector('#durationSlider');
+        console.log(durationSlider)
         durationSlider.remove();
 
-        const selectedDuration = document.querySelector('#selectedDuration');
+        // const selectedDuration = document.querySelector('#selectedDuration');
         selectedDuration.remove();
 
         stopTimerWhite();
@@ -603,8 +604,8 @@ timerCheckboxInput.addEventListener('change', function () {
     blackTimer.style.setProperty('align-items', 'center')
 
 
-    timerContainer.appendChild(durationSlider);
-    timerContainer.appendChild(selectedDuration);
+    settings.appendChild(durationSlider);
+    settings.appendChild(selectedDuration);
 
     chessContainer.appendChild(blackTimer);
     chessContainer.appendChild(whiteTimer);
@@ -629,12 +630,18 @@ settingsImage.addEventListener('click', () => {
         settings.style.setProperty('display', 'block')
         settings.appendChild(rotateCheckboxContainer)
         settings.appendChild(timerCheckboxContainer)
+        if (timerCheckboxInput.checked) {
+            settings.appendChild(durationSlider);
+            settings.appendChild(selectedDuration);
+        }
         settingsOpen = true
         return
     }
     settings.style.setProperty('display', 'none')
     rotateCheckboxContainer.remove()
     timerCheckboxContainer.remove()
+    selectedDuration.remove();
+    durationSlider.remove();
     settingsOpen = false
 })
 
