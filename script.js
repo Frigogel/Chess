@@ -330,7 +330,6 @@ function playerWins(winner, draw = false) {
 
     const winScreenText = document.createElement('div')
     winScreenText.style.setProperty('font-size', `calc(${size}/20)`)
-    // console.log(`${size}px`)
     winScreen.appendChild(winScreenText)
 
     if (draw) {
@@ -382,7 +381,7 @@ let size = chessContainer.getAttribute('size')
 if (size.includes('fill')) {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-    if (screenHeight < screenWidth) size = size.replace('fill', screenHeight.toString() + 'px')
+    if (screenHeight < screenWidth) size = `calc(${size.replace('fill', screenHeight.toString() + 'px')}*0.9)`
     else size = size.replace('fill', screenWidth.toString() + 'px')
 }
 const newBoard = () => {
@@ -395,8 +394,8 @@ const newBoard = () => {
         for (let j = 0; j < 8; j++) {
             const th = document.createElement('th')
             th.style.setProperty('padding', '0')
-            th.style.setProperty('height', `calc(calc(${size}/8)*0.9)`)
-            th.style.setProperty('width', `calc(calc(${size}/8)*0.9)`)
+            th.style.setProperty('height', `calc(calc(${size}/8))`)
+            th.style.setProperty('width', `calc(calc(${size}/8))`)
             th.style.setProperty('position', 'relative')
             if ((i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0)) th.style.setProperty('background', 'rgb(118,150,86)')
             tr.appendChild(th)
