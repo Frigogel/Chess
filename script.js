@@ -283,7 +283,7 @@ function newTurn() {
 
 
                     if (rotateCheckboxInput.checked) {
-                        chessContainer.style.setProperty('transform', `rotateX(${newAngle}deg)`)
+                        chessContainer.style.setProperty('transform', `rotate(${newAngle}deg)`)
                         whiteGraveyard.style.setProperty('transform', `rotateX(${newAngle}deg)`)
                         blackGraveyard.style.setProperty('transform', `rotateX(${newAngle}deg)`)
                         if (timerCheckboxInput.checked) {
